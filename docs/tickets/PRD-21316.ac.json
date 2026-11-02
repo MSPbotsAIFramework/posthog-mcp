@@ -1,0 +1,142 @@
+[
+  {
+    "id": "TC-PH-001",
+    "ac": "AC1",
+    "text": "Given a valid X-PostHog-Api-Key and X-PostHog-Project-Id, When posthog_list_feature_flags is called, Then it returns the project's feature flags (key, name, active, archived) with pagination metadata (has_more, next offset)",
+    "type": "auto",
+    "tests": []
+  },
+  {
+    "id": "TC-PH-002",
+    "ac": "AC1",
+    "text": "Given filters that match no feature flags, When posthog_list_feature_flags is called, Then it returns an empty array, not an error and not null",
+    "type": "auto",
+    "tests": []
+  },
+  {
+    "id": "TC-PH-003",
+    "ac": "AC2",
+    "text": "Given a feature flag id that exists in the project, When posthog_get_feature_flag is called, Then it returns that flag's full definition including its rollout filters",
+    "type": "auto",
+    "tests": []
+  },
+  {
+    "id": "TC-PH-004",
+    "ac": "AC3",
+    "text": "Given a feature flag id that does not exist (or belongs to a different project), When posthog_get_feature_flag is called, Then the tool returns a structured not_found error, not a raw 404 passthrough or a crash",
+    "type": "auto",
+    "tests": []
+  },
+  {
+    "id": "TC-PH-005",
+    "ac": "AC4",
+    "text": "Given valid credentials, When posthog_list_insights is called, Then returned insights carry metadata only (name, short_id, description, filters), no result chart-data payload",
+    "type": "auto",
+    "tests": []
+  },
+  {
+    "id": "TC-PH-006",
+    "ac": "AC5",
+    "text": "Given an existing insight id with real chart data, When posthog_get_insight is called with include_result=true, Then the response includes the insight's result data in addition to its metadata, truncated if it exceeds the response size cap",
+    "type": "manual",
+    "steps": [
+      "Obtain a PostHog Personal API Key and Project ID for a real PostHog account/org with at least one saved insight that has chart data",
+      "Call posthog_get_insight(id=<real insight id>, include_result=true) through the deployed MCP server",
+      "Inspect the returned JSON"
+    ],
+    "expect": "Response includes both insight metadata (name, short_id, filters) and a non-empty result field reflecting the insight's actual chart data; if the serialized result would exceed ~20000 chars it is truncated rather than omitted or causing an error",
+    "result": "untested",
+    "evidence": "needs a real vendor account -- no PostHog test account available at design time; flagged as pending, not blocking"
+  },
+  {
+    "id": "TC-PH-007",
+    "ac": "AC6",
+    "text": "Given event name, distinct_id, and time-range filters, When posthog_list_events is called, Then only matching events are returned, newest-first, up to the requested limit",
+    "type": "auto",
+    "tests": []
+  },
+  {
+    "id": "TC-PH-008",
+    "ac": "AC7",
+    "text": "Given a search term matching an email, name, or distinct id fragment, When posthog_list_persons is called, Then matching persons are returned",
+    "type": "auto",
+    "tests": []
+  },
+  {
+    "id": "TC-PH-009",
+    "ac": "AC8",
+    "text": "Given an existing person id, When posthog_get_person is called, Then that person's profile (distinct_ids, properties) is returned",
+    "type": "auto",
+    "tests": []
+  },
+  {
+    "id": "TC-PH-010",
+    "ac": "AC9",
+    "text": "Given filters that match no cohorts, When posthog_list_cohorts is called, Then it returns an empty array, not an error and not null",
+    "type": "auto",
+    "tests": []
+  },
+  {
+    "id": "TC-PH-011",
+    "ac": "AC9",
+    "text": "Given filters that match no annotations, When posthog_list_annotations is called, Then it returns an empty array, not an error and not null",
+    "type": "auto",
+    "tests": []
+  },
+  {
+    "id": "TC-PH-012",
+    "ac": "AC10",
+    "text": "Given X-PostHog-Api-Key is missing from the request, When any tool is called, Then the server returns 401 with a body naming X-PostHog-Api-Key as the missing header, not a 500",
+    "type": "auto",
+    "tests": []
+  },
+  {
+    "id": "TC-PH-013",
+    "ac": "AC10",
+    "text": "Given X-PostHog-Project-Id is missing from the request, When any tool is called, Then the server returns 401 with a body naming X-PostHog-Project-Id as the missing header, not a 500",
+    "type": "auto",
+    "tests": []
+  },
+  {
+    "id": "TC-PH-014",
+    "ac": "AC11",
+    "text": "Given two requests carrying two different real PostHog accounts' credentials and project ids, When both call the same tool concurrently, Then each request's response reflects only its own project's data, with no credential or response data crossing between the two",
+    "type": "manual",
+    "steps": [
+      "Obtain Personal API Key + Project ID for two distinct real PostHog accounts/projects (tenant A and tenant B)",
+      "Fire two concurrent posthog_list_feature_flags calls at the deployed MCP server, one with tenant A's headers and one with tenant B's headers",
+      "Compare both responses against what each tenant's own PostHog UI shows"
+    ],
+    "expect": "Tenant A's response contains only tenant A's flags; tenant B's response contains only tenant B's flags; neither response contains the other tenant's data or any trace of the other tenant's API key",
+    "result": "untested",
+    "evidence": "needs a real vendor account -- requires two distinct live PostHog accounts, not available at design time; the unit-test-level isolation check (tests/test_middleware.py, simulated contexts within one process) is the auto-covered proxy for this during dev, this manual case is the full end-to-end confirmation, pending, not blocking"
+  },
+  {
+    "id": "TC-PH-015",
+    "ac": "AC12",
+    "text": "Given X-PostHog-Host is not supplied, When any tool is called, Then the outbound request targets https://us.posthog.com",
+    "type": "auto",
+    "tests": []
+  },
+  {
+    "id": "TC-PH-016",
+    "ac": "AC12",
+    "text": "Given X-PostHog-Host points at a real EU Cloud or self-hosted PostHog instance, When any tool is called, Then the outbound request reaches that host and returns real data from it",
+    "type": "manual",
+    "steps": [
+      "Obtain a Personal API Key, Project ID, and host URL for a real PostHog EU Cloud account (or a self-hosted instance)",
+      "Call posthog_list_feature_flags with X-PostHog-Host set to that host",
+      "Confirm via the vendor's own UI that the returned flags match that specific EU/self-hosted project, not the US Cloud default"
+    ],
+    "expect": "Response reflects the EU Cloud / self-hosted project's actual data, confirming the request was routed to the overridden host rather than the US Cloud default",
+    "result": "untested",
+    "evidence": "needs a real vendor account -- no EU Cloud or self-hosted PostHog account available at design time; flagged as pending, not blocking"
+  },
+  {
+    "id": "TC-PH-017",
+    "ac": "AC13",
+    "text": "Given the upstream PostHog API responds 429 with a Retry-After header, When a tool call hits it, Then the tool retries with backoff honoring Retry-After and either succeeds within the retry budget or returns a structured rate_limited error once the budget is exhausted",
+    "type": "auto",
+    "tests": []
+  }
+]
